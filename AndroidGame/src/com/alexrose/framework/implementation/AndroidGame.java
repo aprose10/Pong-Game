@@ -3,6 +3,7 @@ package com.alexrose.framework.implementation;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -25,6 +26,10 @@ import com.alexrose.pong.inAppBilling.IabHelper;
 import com.alexrose.pong.inAppBilling.IabResult;
 import com.alexrose.pong.inAppBilling.Inventory;
 import com.alexrose.pong.inAppBilling.Purchase;
+import com.facebook.Session;
+import com.facebook.SessionState;
+import com.facebook.UiLifecycleHelper;
+
 
 public abstract class AndroidGame extends Activity implements Game {
 	AndroidFastRenderView renderView;
@@ -34,15 +39,31 @@ public abstract class AndroidGame extends Activity implements Game {
 	FileIO fileIO;
 	Screen screen;
 	WakeLock wakeLock;
-	IabHelper mHelper;
+	public static boolean loggedIn = false;
+	public IabHelper mHelper;
+	private Session.StatusCallback statusCallback = new SessionStatusCallback();
+	private UiLifecycleHelper uiHelper;
+	private Session.StatusCallback callback = 
+			new Session.StatusCallback() {
+		@Override
+		public void call(Session session, 
+				SessionState state, Exception exception) {
+			onSessionStateChange(session, state, exception);
+		}
+	};
 
-	boolean mIsPaddleColor = false;
+	public boolean mIsPaddleColor = false;
+	public static AndroidGame androidGame;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		androidGame = this;
 
-		String base64EncodedPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApJ1Eqk0MqVVkwwTo3wAOogDD1QdDhgDxEnFd2DCQ9mekmXC6fcX2A9sdD0GGRaKsxW7aVR0O5sSLRJt2C1YjKTr0Nq7uv1nTvveYIWCV/6U87EpbmCjNya+IZL9VqErO25AuixHG/cltjKk1F/Zv44+Y786ISAhnshEv2422xhimCUrxKKRYE/tpfrE+2qkOZ+cuCJGzeK7+znVPVKojhYU618TccGJ184anpD4Yq/J6SVFhJAPfZOEE3BgHQAHByc05gSmdvjunsAi/dVvP1W5bLiUHnnywKsh6Qg7F5d8QHYgUKG69mEVFZg9XslsE4xNRBfxcKafuY4/Q7zV3EQIDAQAB";
+		uiHelper = new UiLifecycleHelper(this, callback);
+		uiHelper.onCreate(savedInstanceState);
+
+		String base64EncodedPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApbjgh2Qulj36uFgWeOoph6e5iAo6HcZ7LmKOA8uZinb9pQ4oSPnGXeWM2q25kd0W+ujB5u2x9FfU7VGdL5JjXzWiI5VVPa9RLagfpQOIE4eUs3fM33+HE78tX1GbFmRKFIHUSAjyBECFsA/gUSmJiKyyaoB7zZP0X26p3UgwCul7391oz1ynj2+HesuhHHkKawXhG/dqIdZCc8xAhKNcHJcDGzlyfPD0Y+bBk2wsK+BZzHN6OtcbMq6jJswIBtXWBrKZp4nQULUDsOl1yXQERT1qBBx/swgfBfrRSFb+iIiHsK8J4niis6kkO8EGzQTZ3lw3NG3giOICzv2tCgE5JQIDAQAB";
 
 
 		Log.d("YOLO", "Creating IAB helper.");
@@ -96,6 +117,20 @@ public abstract class AndroidGame extends Activity implements Game {
 		PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
 		wakeLock = powerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, "MyGame");
 		//WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+
+		Session session = Session.getActiveSession();
+		if (session == null) {
+			if (savedInstanceState != null) {
+				session = Session.restoreSession(this, null, statusCallback, savedInstanceState);
+			}
+			if (session == null) {
+				session = new Session(this);
+			}
+			Session.setActiveSession(session);
+			if (session.getState().equals(SessionState.CREATED_TOKEN_LOADED)) {
+				session.openForRead(new Session.OpenRequest(this).setCallback(statusCallback));
+			}
+		}
 	}
 
 	IabHelper.QueryInventoryFinishedListener mGotInventoryListener = new IabHelper.QueryInventoryFinishedListener() {
@@ -118,32 +153,19 @@ public abstract class AndroidGame extends Activity implements Game {
 			Purchase paddleColorPurchase = inventory.getPurchase("paddlecolor");
 			mIsPaddleColor = (paddleColorPurchase != null && verifyDeveloperPayload(paddleColorPurchase));
 			Log.d("YOLO", "User is " + (mIsPaddleColor ? "PADDLE COLOR" : "NO PADDLE COLOR"));
-			String paddleColorPrice = inventory.getSkuDetails("paddlecolor").getPrice();
+			//String paddleColorPrice = inventory.getSkuDetails("paddlecolor").getPrice();
 
-			/*        // Do we have the infinite gas plan?
-            Purchase infiniteGasPurchase = inventory.getPurchase(SKU_INFINITE_GAS);
-            mSubscribedToInfiniteGas = (infiniteGasPurchase != null && 
-                    verifyDeveloperPayload(infiniteGasPurchase));
-            Log.d(TAG, "User " + (mSubscribedToInfiniteGas ? "HAS" : "DOES NOT HAVE") 
-                        + " infinite gas subscription.");
-            if (mSubscribedToInfiniteGas) mTank = TANK_MAX;
+			//This is where we add logic that user has already purchased the color upgrade because they already own it
 
-            // Check for gas delivery -- if we own gas, we should fill up the tank immediately
-            Purchase gasPurchase = inventory.getPurchase(SKU_GAS);
-            if (gasPurchase != null && verifyDeveloperPayload(gasPurchase)) {
-                Log.d("YOLO", "We have gas. Consuming it.");
-                mHelper.consumeAsync(inventory.getPurchase(SKU_GAS), mConsumeFinishedListener);
-                return;
-            }
 
-			 */
+
 			//updateUi();
 			//setWaitScreen(false);
 			Log.d("YOLO", "Initial inventory query finished; enabling main UI.");
 		}
 	};
 
-	IabHelper.OnIabPurchaseFinishedListener mPurchaseFinishedListener = new IabHelper.OnIabPurchaseFinishedListener() {
+	public IabHelper.OnIabPurchaseFinishedListener mPurchaseFinishedListener = new IabHelper.OnIabPurchaseFinishedListener() {
 		public void onIabPurchaseFinished(IabResult result, Purchase purchase) {
 			Log.d("YOLO", "Purchase finished: " + result + ", purchase: " + purchase);
 			if (result.isFailure()) {
@@ -158,29 +180,15 @@ public abstract class AndroidGame extends Activity implements Game {
 			}
 			Log.d("YOLO", "Purchase successful.");
 
-			/* if (purchase.getSku().equals(SKU_GAS)) {
-                // bought 1/4 tank of gas. So consume it.
-                Log.d("YOLO", "Purchase is gas. Starting gas consumption.");
-                mHelper.consumeAsync(purchase, mConsumeFinishedListener);
-            }
-            else if (purchase.getSku().equals(SKU_PREMIUM)) {
-                // bought the premium upgrade!
-                Log.d("YOLO", "Purchase is premium upgrade. Congratulating user.");
-                alert("Thank you for upgrading to premium!");
-                mIsPremium = true;
-                updateUi();
-                setWaitScreen(false);
-            }
-            else if (purchase.getSku().equals(SKU_INFINITE_GAS)) {
-                // bought the infinite gas subscription
-                Log.d("YOLO", "Infinite gas subscription purchased.");
-                alert("Thank you for subscribing to infinite gas!");
-                mSubscribedToInfiniteGas = true;
-                mTank = TANK_MAX;
-                updateUi();
-                setWaitScreen(false);
-            }
-			 */
+			if (purchase.getSku().equals("paddlecolor")) {
+				// bought 1/4 tank of gas. So consume it.
+				Log.d("YOLO", "Purchase is paddle color");
+				alert("Thank you for purchasing a new paddle color!");
+				mIsPaddleColor = true;
+				//updateUi();
+				//setWaitScreen(false);
+
+			}
 		}
 
 	};
@@ -233,6 +241,7 @@ public abstract class AndroidGame extends Activity implements Game {
 		wakeLock.acquire();
 		screen.resume();
 		renderView.resume();
+		uiHelper.onResume();
 	}
 
 	@Override
@@ -241,9 +250,16 @@ public abstract class AndroidGame extends Activity implements Game {
 		wakeLock.release();
 		renderView.pause();
 		screen.pause();
+		uiHelper.onPause();
 
 		if (isFinishing())
 			screen.dispose();
+	}
+
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		uiHelper.onActivityResult(requestCode, resultCode, data);
 	}
 
 	@Override
@@ -288,5 +304,52 @@ public abstract class AndroidGame extends Activity implements Game {
 		super.onDestroy();
 		if (mHelper != null) mHelper.dispose();
 		mHelper = null;
+		uiHelper.onDestroy();
+	}
+
+	private class SessionStatusCallback implements Session.StatusCallback {
+		@Override
+		public void call(Session session, SessionState state, Exception exception) {
+
+		}
+	}
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		uiHelper.onSaveInstanceState(outState);
+	}
+
+	public void onClickLogin() {
+		Session session = Session.getActiveSession();
+		if (!session.isOpened() && !session.isClosed()) {
+			session.openForRead(new Session.OpenRequest(this).setCallback(statusCallback));
+		} else {
+			Session.openActiveSession(this, true, statusCallback);
+		}
+	}
+
+	public void onClickLogout() {
+		Session session = Session.getActiveSession();
+		if (!session.isClosed()) {
+			session.closeAndClearTokenInformation();
+		}
+	}
+	
+	
+
+	private void onSessionStateChange(Session session, SessionState state, Exception exception) {
+		if (state.isOpened()) {
+			// If the session state is open:
+			// Show the authenticated fragment
+			loggedIn = true;
+		} else if (state.isClosed()) {
+			// If the session state is closed:
+			loggedIn = false;
+		}
+	}
+	
+	public static boolean loggedIn(){
+		return loggedIn;
 	}
 }

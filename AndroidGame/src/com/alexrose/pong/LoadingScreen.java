@@ -24,7 +24,11 @@ public class LoadingScreen extends Screen {
         Assets.step1 = g.newImage("mario-firstimage.png", ImageFormat.ARGB4444);
         Assets.step2 = g.newImage("mario-secondimage.png", ImageFormat.ARGB4444);
         Assets.step3 = g.newImage("mario-thirdimage.png", ImageFormat.ARGB4444);
-
+        Assets.shopButton = g.newImage("shopButton.jpg", ImageFormat.RGB565);
+        Assets.newPongPaddle = g.newImage("newPongPaddle.jpg", ImageFormat.RGB565);
+        Assets.facebookButton = g.newImage("facebook_button.png", ImageFormat.ARGB4444);
+        Assets.facebookLogout = g.newImage("fb_logout.png", ImageFormat.ARGB4444);
+        Assets.postButton = g.newImage("postButton.jpg", ImageFormat.RGB565);
         
         game.setScreen(new MainMenuScreen(game));
 

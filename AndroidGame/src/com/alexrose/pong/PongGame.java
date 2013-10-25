@@ -10,7 +10,7 @@ import com.alexrose.framework.implementation.AndroidGame;
 
 public class PongGame extends AndroidGame {
 	public static String map;
-	public static Activity activity;
+	public static PongGame activity;
 	boolean firstTimeCreate = true;
 
 	@Override
@@ -24,6 +24,10 @@ public class PongGame extends AndroidGame {
 		
 		return new SplashLoadingScreen(this);
 
+	}
+	
+	public static boolean hasPaddleColorUpgrade(){
+		return activity.mIsPaddleColor;
 	}
 
 	@Override

@@ -9,12 +9,14 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.widget.ImageView;
 
 import com.alexrose.framework.Game;
 import com.alexrose.framework.Graphics;
 import com.alexrose.framework.Image;
 import com.alexrose.framework.Screen;
 import com.alexrose.framework.Input.TouchEvent;
+import com.alexrose.framework.implementation.AndroidGame;
 
 public class GameScreen extends Screen {
 	enum GameState {
@@ -36,12 +38,12 @@ public class GameScreen extends Screen {
 	Paddle aiPaddle;
 	boolean hitHuman = true;
 	Paint gameOverPaint;
-	
+
 
 	public GameScreen(Game game) {
 		super(game);
-		
-		
+
+		//PongGame.activity.mIsPaddleColor = true;
 
 		// Initialize game objects here
 
@@ -66,18 +68,18 @@ public class GameScreen extends Screen {
 
 		SaveGameState gameState = PongGame.loadGame();
 		if(gameState != null){
-		ball.setLocationX(gameState.ballLocationX);
-		ball.setLocationY(gameState.ballLocationY);
-		ball.setVelocityX(gameState.velocityX);
-		ball.setVelocityY(gameState.velocityY);
-		humanScore = gameState.humanScore;
-		aiScore = gameState.AiScore;
-		humanPaddle.setLocationX(gameState.humanPaddleX);
-		aiPaddle.setLocationX(gameState.AiPaddleX);
-		hitHuman = gameState.HitHuman;
+			ball.setLocationX(gameState.ballLocationX);
+			ball.setLocationY(gameState.ballLocationY);
+			ball.setVelocityX(gameState.velocityX);
+			ball.setVelocityY(gameState.velocityY);
+			humanScore = gameState.humanScore;
+			aiScore = gameState.AiScore;
+			humanPaddle.setLocationX(gameState.humanPaddleX);
+			aiPaddle.setLocationX(gameState.AiPaddleX);
+			hitHuman = gameState.HitHuman;
 		}
 		else{
-			
+
 		}
 
 	}
@@ -199,10 +201,11 @@ public class GameScreen extends Screen {
 					PongGame.saveGame(gs);
 					android.os.Process.killProcess(android.os.Process.myPid());
 				}
-				
+
 				else if(event.x >= 260 && event.x <= 300 && event.y >= 270 && event.y <= 310 ){
 					//no
 					state = GameState.Running;
+				
 				}
 			}
 		}
@@ -224,13 +227,17 @@ public class GameScreen extends Screen {
 	@Override
 	public void paint(float deltaTime) {
 		Graphics g = game.getGraphics();
+		g.drawRect(0, 0, 480, 800, Color.GREEN);
+		if(PongGame.hasPaddleColorUpgrade() == true){
+			g.drawImage(Assets.newPongPaddle, humanPaddle.getLocationX(), humanPaddle.getLocationY() );
+		}
+		else{
+			g.drawImage(Assets.paddles, humanPaddle.getLocationX(), humanPaddle.getLocationY() );
+		}
 
 		// First draw the game elements.
-		g.drawRect(0, 0, 480, 800, Color.GREEN);
 		g.drawImage(Assets.ball, ball.getLocationX(), ball.getLocationY());
-		g.drawImage(Assets.paddles, humanPaddle.getLocationX(), humanPaddle.getLocationY() );
 		g.drawImage(Assets.paddles, aiPaddle.getLocationX(), aiPaddle.getLocationY() );
-
 
 		// Example:
 		// g.drawImage(Assets.background, 0, 0);
@@ -306,7 +313,7 @@ public class GameScreen extends Screen {
 		g.drawString("No", 280, 300, paint);
 
 	}
-	
+
 	public void drawLineRect(Graphics g, int x, int y, int width, int height){
 		g.drawLine(x, y, x + width, y, Color.WHITE);
 		g.drawLine(x + width, y + height, x + width, y, Color.WHITE);
@@ -319,7 +326,6 @@ public class GameScreen extends Screen {
 		g.drawRect(0, 0, 1281, 801, Color.BLACK);
 		if(humanScore < aiScore){
 			g.drawString("YOU LOSE", 240, 200, gameOverPaint);
-
 		}
 		else{
 			g.drawString("YOU WIN!!!", 240, 200, gameOverPaint);
@@ -327,7 +333,10 @@ public class GameScreen extends Screen {
 
 		g.drawString("Tap to go to main screen", 240, 600, paint);
 		g.drawString("" + humanScore + " - " + aiScore, 240, 400, paint);
-
+		if(AndroidGame.androidGame.loggedIn == true){
+			g.drawImage(Assets.postButton, 240, 300);
+			 
+		}
 	}
 
 	@Override

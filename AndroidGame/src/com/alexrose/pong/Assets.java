@@ -17,7 +17,10 @@ public class Assets {
 	public static Image step2;
 	public static Image step3;
 	public static Image shopButton;
-    
+	public static Image newPongPaddle;
+	public static Image facebookButton;
+	public static Image facebookLogout;
+	public static Image postButton;
     public static void load(PongGame pongGame) {
         // TODO Auto-generated method stub
         theme = pongGame.getAudio().createMusic("mainTheme.mp3");
