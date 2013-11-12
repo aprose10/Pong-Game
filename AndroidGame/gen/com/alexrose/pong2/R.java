@@ -235,6 +235,7 @@ containing a value of this type.
         public static final int large=0x7f040002;
         public static final int normal=0x7f040001;
         public static final int picker_subtitle=0x7f040012;
+        public static final int postbutton=0x7f040018;
         public static final int small=0x7f040000;
     }
     public static final class layout {
@@ -252,6 +253,7 @@ containing a value of this type.
         public static final int com_facebook_placepickerfragment_list_row=0x7f03000b;
         public static final int com_facebook_search_bar_layout=0x7f03000c;
         public static final int com_facebook_usersettingsfragment=0x7f03000d;
+        public static final int main=0x7f03000e;
     }
     public static final class string {
         public static final int app_id=0x7f07001a;

@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.alexrose.framework.Game;
@@ -17,6 +18,7 @@ import com.alexrose.framework.Image;
 import com.alexrose.framework.Screen;
 import com.alexrose.framework.Input.TouchEvent;
 import com.alexrose.framework.implementation.AndroidGame;
+import com.alexrose.pong2.R;
 
 public class GameScreen extends Screen {
 	enum GameState {
@@ -205,7 +207,7 @@ public class GameScreen extends Screen {
 				else if(event.x >= 260 && event.x <= 300 && event.y >= 270 && event.y <= 310 ){
 					//no
 					state = GameState.Running;
-				
+
 				}
 			}
 		}
@@ -216,9 +218,15 @@ public class GameScreen extends Screen {
 		for (int i = 0; i < len; i++) {
 			TouchEvent event = touchEvents.get(i);
 			if (event.type == TouchEvent.TOUCH_UP) {
-				nullify();
+				if(event.x >= 240 && event.x <=373 && event.y >= 300 && event.y <= 347){	
+				PongGame.activity.publishStory();
 				game.setScreen(new MainMenuScreen(game));
-				return;
+				}
+				else{
+					nullify();
+					game.setScreen(new MainMenuScreen(game));
+					return;
+				}
 			}
 		}
 
@@ -335,7 +343,7 @@ public class GameScreen extends Screen {
 		g.drawString("" + humanScore + " - " + aiScore, 240, 400, paint);
 		if(AndroidGame.androidGame.loggedIn == true){
 			g.drawImage(Assets.postButton, 240, 300);
-			 
+
 		}
 	}
 

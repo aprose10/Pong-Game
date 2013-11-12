@@ -5,6 +5,7 @@ import java.util.List;
 import android.app.Activity;
 import android.util.Log;
 
+import com.alexrose.framework.Animation;
 import com.alexrose.framework.Game;
 import com.alexrose.framework.Graphics;
 import com.alexrose.framework.Image;
